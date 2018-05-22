@@ -1,0 +1,616 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="customer-products">
+  <template>
+    <style>
+    	:host {
+    		display: block;
+    	}
+    	nav {
+    		float: left;
+    		border-right: 1px solid;
+    		padding-right: 2%;
+    		background-color: #808080;
+    		text-align: justify;
+    	}
+    	nav p {
+    		cursor: pointer;
+    	}
+    	.custProdDetails {
+    		margin: 0% 0 0 2%;
+    		display:inline-block;
+    	}
+    	.heading {
+    		margin: 2% 0 2% 0% !important;
+    		border-bottom: 1px solid gray;
+    	}
+    	table {
+		  border-collapse: collapse;
+		  background-color: #66CDAA;
+		  height: 160px;
+		}
+		table td{
+		  border: 1px solid black;
+		  padding: 5px 5px 0 5px;
+		}		
+		div:last-child {
+			margin-top : 10%;
+		}
+		div > table {
+			background-color: #C0C0C0;
+		}
+    	
+    </style>
+   	<nav>
+   		<p id="home" on-click="showCustDet">Home</p>
+   		<p on-click="showPaymentDet">Payments</p>
+   		<p on-click="showLoanDet">Loan</p>
+   		<p on-click="showCardDet">Card</p>
+   		<p on-click="showInsDet">Insurance</p>
+   	</nav>
+    <!-- This ajax call fetches customer account and product details -->
+    <iron-ajax
+               id="home"
+               auto
+               url="/ing/product/279273444"
+               params='{}'
+               handle-as="json"
+               on-error="handleErrorResponse"
+               on-response="readCustDetResponse"
+               >
+    </iron-ajax>
+    
+    <!-- This ajax call fetches product transaction history -->
+    <iron-ajax
+               id="transDetail"
+               url="ing/transaction/[[prodId]]/[[rKey]]"
+               params='{}'
+               handle-as="json"
+               on-error="handleErrorResponse"
+               on-response="readTransResponse"
+               >
+    </iron-ajax>
+    	
+    <!-- This template displays primary details of the customer -->
+    <template is="dom-if" if="{{showCustInfo}}" >
+	    <section id="customerInfo" class="custProdDetails">
+    	<p class="heading"><b>Account Details</b></p>
+		      <table>
+		    	<template is="dom-repeat" items="[[custInfo]]">
+			      	<tbody>
+			      		<tr>
+			      			<td><b>Name</b></td>
+			      			<td>[[item.name]]</td>
+			      		</tr>
+			      		<tr>
+			      			<td><b>Account ID</b></td>
+			      			<td>[[item.accountId]]</td>
+			      		</tr>
+			      		<template is="dom-repeat" items="[[item.accountNumber]]" as="acc">  
+				      		<tr>
+				      			<td><b>Account Type</b></td>
+				      			<td>[[acc.type]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Account Number</b></td>
+				      			<td>[[acc.value]]</td>
+				      		</tr>
+			      		</template>
+			      		<template is="dom-repeat" items="[[item.card]]" as="cardItm">  
+				      		<tr>
+				      			<td><b>Available Balance</b></td>
+				      			<td>&euro; [[cardItm.balance]]</td>
+				      		</tr>
+			      		</template>
+			      	</tbody>
+		    	</template>
+		      </table>
+		</section>
+	</template>
+  
+    <!-- Loan Information template -->
+    <template is="dom-if" if="{{showLoanInfo}}">
+	    <section  id="loan"class="custProdDetails">
+	    <p class="heading"><b>Loan Details</b></p>
+	    	<div>[[checkIfEmpty('L')]]</div>
+	    	<table>
+			    <template is="dom-repeat" items="[[custInfo]]">
+			    	<template is="dom-repeat" items="[[item.loan]]" as="loan" >
+    					<tbody>
+				    		<tr>
+				      			<td><b>Loan Number</b></td>
+				      			<td>
+				      				<a href="javascript:void(0)" title="Click here for transaction history" data-rkey$="[[loan.loanNum]]" on-click="getTransDet">[[loan.loanNum]]</a>
+				      			</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Loan Amount</b></td>
+				      			<td>&euro; [[loan.loanAmt]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Loan Interest</b></td>
+				      			<td>[[loan.interestRate]]%</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Loan Type</b></td>
+				      			<td>[[loan.loanType]]</td>
+				      		</tr>
+			      		</tbody>
+				    </template>
+			    </template>
+			</table>
+			
+			<!-- Transaction History of Loan -->
+			<template is="dom-if" if="{{showTransInfo}}">
+				<div>
+					<p class="heading"><b>Transaction History</b></p>
+					<template is="dom-if" if="{{showEmptyMsg}}">No transactions found.</template>
+			    	<template is="dom-repeat" items="[[transInfo]]" as="trans" >
+						<table>
+    					<tbody>
+    						<tr>
+				      			<td><b>Loan Number</b></td>
+				      			<td>[[trans.relationshipKey]]</td>
+				      		</tr>
+				    		<tr>
+				      			<td><b>Transaction ID</b></td>
+				      			<td>[[trans.transaction_id]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Transaction Date</b></td>
+				      			<td>[[trans.executionDate]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Status</b></td>
+				      			<td>[[trans.status]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Comments</b></td>
+				      			<td>[[trans.comments]]</td>
+				      		</tr>
+			      		</tbody>
+						</table>
+						<br/>
+				    </template>
+				</div>
+			</template>
+	    </section>
+   </template>
+ 
+   <!-- Payment Information template -->
+    <template is="dom-if" if="{{showPaymentInfo}}">
+	    <section id="Payment"class="custProdDetails">
+	    <p class="heading"><b>Payment Transactions</b></p>
+	    	<div>[[checkIfEmpty('P')]]</div>
+	<div>
+		Choose Account: 
+		<select id = account_type on-change="account_TypeFunction">
+			<option value="saving">Saving</option>
+			<option value="current">Current</option>
+		</select>
+	</div>
+
+	<table>
+	    		<tbody>
+	    		<template is="dom-if" if="{{account_TypeFunction1}}">
+				    <template is="dom-repeat" items="[[custInfo].payment[1]]">
+				    	<template is="dom-repeat" items="[[item]]" as="payment" >
+				    		<tr>
+				      			<td><b>Transaction ID</b></td>
+				      			<td>
+				      				<a href="javascript:void(0)" title="Click here for transaction history" data-rkey$="[[payment.transactionId]]" on-click="getTransDet">[[payment.transactionId]]</a>
+				      			</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Mode</b></td>
+				      			<td>[[payment.mode]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Transacted Currency</b></td>
+				      			<td>[[payment.currency]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Amount Transferred</b></td>
+				      			<td>[[payment.amount]]</td>
+				      		</tr>
+				      						      		<tr>
+				      			<td><b>Account Type</b></td>
+				      			<td>[[payment.accountType]]</td>
+				      		</tr>
+				    	</template>
+				    </template>
+				    </template>
+				    <template is="dom-if" if="{{account_TypeFunction2}}">
+				    <template is="dom-repeat" items="[[custInfo].payment[0]]">
+				    	<template is="dom-repeat" items="[[item]]" as="payment" >
+				    		<tr>
+				      			<td><b>Transaction ID</b></td>
+				      			<td>
+				      				<a href="javascript:void(0)" title="Click here for transaction history" data-rkey$="[[payment.transactionId]]" on-click="getTransDet">[[payment.transactionId]]</a>
+				      			</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Mode</b></td>
+				      			<td>[[payment.mode]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Transacted Currency</b></td>
+				      			<td>[[payment.currency]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Amount Transferred</b></td>
+				      			<td>[[payment.amount]]</td>
+				      		</tr>
+				      						      		<tr>
+				      			<td><b>Account Type</b></td>
+				      			<td>[[payment.accountType]]</td>
+				      		</tr>
+				    	</template>
+				    </template>
+				    </template>
+			    </tbody>
+			</table>
+			
+			<!-- Transaction History of Payment -->
+			<template is="dom-if" if="{{showTransInfo}}">
+				<div>
+					<p class="heading"><b>Transaction History</b></p>
+					<template is="dom-if" if="{{showEmptyMsg}}">No transactions found.</template>
+			    	<template is="dom-repeat" items="[[transInfo]]" as="trans" >
+						<table>
+    					<tbody>
+    						<tr>
+				      			<td><b>Payment ID</b></td>
+				      			<td>[[trans.relationshipKey]]</td>
+				      		</tr>
+				    		<tr>
+				      			<td><b>Transaction ID</b></td>
+				      			<td>[[trans.transaction_id]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Transaction Date</b></td>
+				      			<td>[[trans.executionDate]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Status</b></td>
+				      			<td>[[trans.status]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Comments</b></td>
+				      			<td>[[trans.comments]]</td>
+				      		</tr>
+			      		</tbody>
+						</table>
+						<br/>
+				    </template>
+				</div>
+			</template>
+	    </section>
+   </template>
+ 
+   <!-- Card Information template -->
+    <template is="dom-if" if="{{showCardInfo}}">
+	    <section id="Card"class="custProdDetails">
+	    <p class="heading"><b>Card Details</b></p>
+			<div>[[checkIfEmpty('C')]]</div>
+	    	<table>
+	    		<tbody>
+				    <template is="dom-repeat" items="[[custInfo]]">
+				    	<template is="dom-repeat" items="[[item.card]]" as="card" >
+				    		<tr>
+			      			<td><b>Type</b></td>
+			      			<td>
+			      				<a href="javascript:void(0)" title="Click here for transaction history" data-rkey$="[[card.type]]" on-click="getTransDet">[[card.type]]</a>
+			      			</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Sub-Type</b></td>
+				      			<td>[[card.subType]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Balance</b></td>
+				      			<td>&euro; [[card.balance]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Expiry Date</b></td>
+				      			<td>[[card.expiry]]</td>
+				      		</tr>
+				    	</template>
+				    </template>
+			    </tbody>
+			</table>
+			
+			<!-- Transaction History of Card -->
+			<template is="dom-if" if="{{showTransInfo}}">
+				<div>
+					<p class="heading"><b>Transaction History</b></p>
+					<template is="dom-if" if="{{showEmptyMsg}}">No transactions found.</template>
+			    	<template is="dom-repeat" items="[[transInfo]]" as="trans" >
+						<table>
+    					<tbody>
+    						<tr>
+				      			<td><b>Card</b></td>
+				      			<td>[[trans.relationshipKey]]</td>
+				      		</tr>
+				    		<tr>
+				      			<td><b>Transaction ID</b></td>
+				      			<td>[[trans.transaction_id]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Transaction Date</b></td>
+				      			<td>[[trans.executionDate]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Status</b></td>
+				      			<td>[[trans.status]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Comments</b></td>
+				      			<td>[[trans.comments]]</td>
+				      		</tr>
+			      		</tbody>
+						</table>
+						<br/>
+				    </template>
+				</div>
+			</template>
+	    </section>
+   </template>
+ 
+   <!-- Insurance Information template -->
+    <template is="dom-if" if="{{showInsInfo}}">
+	    <section id="Card"class="custProdDetails">
+	    <p class="heading"><b>Insurance Details</b></p>
+	    	<div>[[checkIfEmpty('I')]]</div>
+	    	<table>
+	    		<tbody>
+				    <template is="dom-repeat" items="[[custInfo]]">
+				    	<template is="dom-repeat" items="[[item.insurance]]" as="ins" >
+				    		<tr>
+				      			<td><b>Type</b></td>
+				      			<td>
+				      				<a href="javascript:void(0)" title="Click here for transaction history" data-rkey$="[[ins.type]]" on-click="getTransDet">[[ins.type]]</a>
+				      			</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Coverage Amount</b></td>
+				      			<td>&euro; [[ins.amount]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Coverage Start Date</b></td>
+				      			<td>[[ins.date]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Premium</b></td>
+				      			<td>&euro; [[ins.premium]]</td>
+				      		</tr>
+				    	</template>
+				    </template>
+			    </tbody>
+			</table>
+			
+			<!-- Transaction History of Insurance -->
+			<template is="dom-if" if="{{showTransInfo}}">
+				<div>
+					<p class="heading"><b>Transaction History</b></p>
+					<template is="dom-if" if="{{showEmptyMsg}}">No transactions found.</template>
+			    	<template is="dom-repeat" items="[[transInfo]]" as="trans" >
+						<table>
+    					<tbody>
+    						<tr>
+				      			<td><b>Type</b></td>
+				      			<td>[[trans.relationshipKey]]</td>
+				      		</tr>
+				    		<tr>
+				      			<td><b>Transaction ID</b></td>
+				      			<td>[[trans.transaction_id]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Transaction Date</b></td>
+				      			<td>[[trans.executionDate]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Status</b></td>
+				      			<td>[[trans.status]]</td>
+				      		</tr>
+				      		<tr>
+				      			<td><b>Comments</b></td>
+				      			<td>[[trans.comments]]</td>
+				      		</tr>
+			      		</tbody>
+						</table>
+						<br/>
+				    </template>
+				</div>
+			</template>
+	    </section>
+   </template>   
+ </template>
+
+<!-- Custom element creation happens here -->
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class CustomerProducts extends Polymer.Element {
+      static get is() { return 'customer-products'; }
+      static get properties() {
+        return {
+          showCustInfo: {
+        	  type: Boolean,
+        	  value: true,
+        	  reflectToAttribute: true
+          },
+          showLoanInfo: {
+        	  type: Boolean,
+        	  value: false,
+        	  reflectToAttribute: true
+          },
+          showPaymentInfo: {
+        	  type: Boolean,
+        	  value: false,
+        	  reflectToAttribute: true
+          },
+          showCardInfo: {
+        	  type: Boolean,
+        	  value: false,
+        	  reflectToAttribute: true
+          },
+          showInsInfo: {
+        	  type: Boolean,
+        	  value: false,
+        	  reflectToAttribute: true
+          },
+          custInfo: {
+        	  type: Object
+          },
+          transInfo: {
+        	type: Object  
+          },
+          prodId: {
+        	type: Number  
+          },
+          showTransInfo: {
+        	type: Boolean,
+        	value: false,
+        	reflectToAttribute: true
+          },
+          rKey: {
+        	type: String
+          },
+          showEmptyMsg: {
+        	type: Boolean,
+          	value: false,
+          	reflectToAttribute: true
+          }
+        };
+      }
+      ready() {
+    	  super.ready();
+      }
+      
+      showCustDet() {
+    	this.showCustInfo = true;
+    	this.showLoanInfo = false;
+    	this.showPaymentInfo = false;
+    	this.showCardInfo = false;
+    	this.showInsInfo = false;
+    	this.showTransInfo = false;
+    	this.transInfo = [];
+    	console.log("into show cust det");
+      }
+      
+      showLoanDet() {
+    	this.showCustInfo = false;
+    	this.showPaymentInfo = false;
+    	this.showLoanInfo = true;
+    	this.showCardInfo = false;
+    	this.showInsInfo = false;
+    	this.showTransInfo = false;
+    	this.transInfo = [];
+    	console.log("into show loan det");
+      }
+      
+      showPaymentDet() {
+    	this.showCustInfo = false;
+      	this.showLoanInfo = false;
+      	this.showCardInfo = false;
+      	this.showInsInfo = false;
+      	this.showPaymentInfo = true;
+      	this.account_TypeFunction1=false;
+      	this.showTransInfo = false;
+      	this.transInfo = [];
+      	console.log("into show payments det");
+      }
+      
+      showCardDet() {
+    	this.showCustInfo = false;
+       	this.showLoanInfo = false;
+        this.showPaymentInfo = false;
+        this.showInsInfo = false;
+    	this.showCardInfo = true;
+    	this.showTransInfo = false;
+    	this.transInfo = [];
+    	console.log("into show card det");
+      }
+      
+      showInsDet() {
+    	this.showCustInfo = false;
+        this.showLoanInfo = false;
+        this.showPaymentInfo = false;
+      	this.showCardInfo = false;
+        this.showInsInfo = true;
+        this.showTransInfo = false;
+        this.transInfo = [];
+      	console.log("into show Ins det");
+      }
+      
+      readCustDetResponse(e) {
+    	  console.log(e.detail.response);
+    	  this.custInfo = e.detail.response;
+      }
+      
+      readTransResponse(e) {
+    	  console.log(e.detail.response);
+    	  this.transInfo = e.detail.response;
+    	  this.transInfo.length == 0 ? this.showEmptyMsg = true : this.showEmptyMsg = false;
+      }
+      
+      handleErrorResponse(e) {
+    	  console.log(e);
+    	  console.log(e.detail);
+    	  console.log(e.detail.error);
+    	  console.log(e.detail.error.message);
+    	  console.log(e.detail.request);
+    	  console.log(e.detail.response);
+    	  console.log(e.detail.request.response);
+      }
+      
+      checkIfEmpty(obj) {
+    	if(obj == 'P') {
+			return this.custInfo[0].payment.length == 0 ? "You have not done any transaction yet." : "";
+    	}
+    	if(obj == 'L') {
+			return this.custInfo[0].loan.length == 0 ? "You have not applied for any loan." : "";
+    	}
+    	if(obj == 'C') {
+			return this.custInfo[0].card.length == 0 ? "You have not opted any card." : "";
+    	}
+    	if(obj == 'I') {
+			return this.custInfo[0].insurance.length == 0 ? "You have not applied for any Insurance." : "";
+    	}
+      }
+      
+      getTransDet(e) {
+    	  var rKey = e.target.dataset.rkey;
+    	  this.rKey = rKey;
+    	  console.log("rkey "+this.rKey);
+    	  this.transInfo = [];
+    	  this.prodId = this.custInfo[0].id;
+    	  console.log("prodId "+this.prodId);
+    	  this.$.transDetail.generateRequest();
+    	  this.showTransInfo = true;
+      }
+      
+      account_TypeFunction(e) {
+    	  var text  = this.custInfo[0].payment[0].accountType;
+    	  console.log(text +" text");
+    	  if(selectedItem==this.custInfo[0].payment[0].accountType){
+    		  this.account_TypeFunction1=true;
+    		  this.account_TypeFunction2=false;
+    	  }else{
+    		  this.account_TypeFunction1=false;
+    		  this.account_TypeFunction2=true;
+    	  }
+    	  
+    	  var selectedItem =e.target.value
+      	console.log(selectedItem +" into show cust det test");
+        }
+      
+    }
+
+    window.customElements.define(CustomerProducts.is, CustomerProducts);
+  </script>
+</dom-module>

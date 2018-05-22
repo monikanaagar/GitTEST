@@ -1,0 +1,35 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<!-- Element for maintaining footer -->
+<dom-module id="ing-footer">
+  <template>
+    <style>
+    	:host {
+	        display: block;
+      	}
+      	.ingFooter {
+		  position: fixed;
+		  bottom: 0;
+		  left: 0;
+  		  right: 0;
+		  width: 100%;
+		  background: #FFA500;
+		  text-align: center;
+		}
+    </style>
+	<p class="ingFooter">Copyright &copy; registered @ ING GROUP 2018-19</p>
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class INGFooter extends Polymer.Element {
+      static get is() { return 'ing-footer'; }
+      static get properties() {}
+    }
+
+    window.customElements.define(INGFooter.is, INGFooter);
+  </script>
+</dom-module>

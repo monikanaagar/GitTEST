@@ -1,0 +1,37 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<!-- Element for maintaining header -->
+<dom-module id="ing-header">
+  <template>
+    <style>
+    	:host {
+	        display: block;
+	        border-bottom: 1px solid;
+      	}
+	    #ingLogo {
+			height: 100px;
+			width: 40%;
+		}
+		.center {
+		    display: block;
+		    margin-left: auto;
+		    margin-right: auto;
+		    width: 50%;
+		}
+    </style>
+    <p><img id="ingLogo" class="center" align="middle" src="/imgs/ING_LOGO.png" alt="ING"></p>
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class INGHeader extends Polymer.Element {
+      static get is() { return 'ing-header'; }
+      static get properties() {}
+    }
+
+    window.customElements.define(INGHeader.is, INGHeader);
+  </script>
+</dom-module>

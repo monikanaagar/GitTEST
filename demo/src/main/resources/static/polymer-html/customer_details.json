@@ -1,0 +1,46 @@
+[
+    {
+        "id": 1102,
+        "name": "Andrew",
+        "type": "Loan",
+        "accountId": 279273444,
+        "accountNumber": [
+            {
+                "type": "Savings",
+                "value": 59000
+            }
+        ],
+        "loan": [
+            {
+                "loanAmt": 12345678,
+                "interestRate": 9,
+                "loanNum": 999999,
+                "loanType": "Car Loan"
+            }
+        ],
+        "payment": [
+            {
+                "amount": 2000,
+                "currency": "Euro",
+                "mode": "online",
+                "transactionId": 55500
+            }
+        ],
+        "card": [
+            {
+                "type": "Debit-Platinum",
+                "subType": "Rewards Points",
+                "balance": 330000,
+                "expiry": "31-Dec-2038"
+            }
+        ],
+        "insurance": [
+            {
+                "type": "Life",
+                "amount": 120000,
+                "date": "31-Jan-2028",
+                "premium": 200
+            }
+        ]
+    }
+]

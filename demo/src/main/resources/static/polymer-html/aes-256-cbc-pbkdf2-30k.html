@@ -1,0 +1,248 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<script src="/bundle.min.js"></script>
+
+<dom-module id="aes-256-cbc-pbkdf2-30k">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+  </template>
+
+  <script>
+    class aes256cbc extends Polymer.Element {
+      static get is() { return 'aes-256-cbc-pbkdf2-30k'; }
+      static get properties() {
+        return {
+          /**
+          * Represents the mnemonic to be encrypted
+          *
+          * @type {String}
+          */
+          mnemonic: {
+            type: String,
+          },
+          /**
+          * Represents the password to be used to encrypt or decrypt the mnemonic
+          *
+          * @type {String}
+          */
+          password:{
+            type: String
+          },
+          /**
+          * Represents the the hash to decrypt or the result of an encrypted mnemonic
+          *
+          * @type {String}
+          */
+          hash:{
+            type: String
+          },
+          /**
+          * Represents the command to encrypt or decrypt
+          *
+          * @type {String}
+          */
+          direction:{
+            type: String,
+          },
+          /**
+          * Represents the 128bit initial vecotor to use when decrypting or has been used when encrypting
+          *
+          * @type {String}
+          */
+          initializationVector:{
+            type: String,
+          },
+          /**
+          * Represents the number of key rounds, the higher the more expensive the operation
+          *
+          * @type {String}
+          */
+          rounds:{
+            type: Number,
+            value: 30000,
+          },
+          /**
+          * Presents true if the result and working is logged 
+          *
+          * @type {Boolean}
+          */
+          debug:{
+            type: Boolean,
+            value: false,
+          },
+          /**
+          * represents the name to use in local storage
+          *
+          * @type {Boolean}
+          */
+          localStorage:{
+            type: String
+          }
+        };
+      }
+      
+      ready() {
+    	  super.ready();
+    	  localStorage.clear();
+    	  console.log("in aes html");
+    	  for (let i = 0; i < localStorage.length; i++){
+    		  let key = localStorage.key(i);
+    		  let value = localStorage.getItem(key);
+    		  console.log("----- "+i+key, value);
+    		}
+    	  console.log("into ready aes******** "+this.password);
+    	  this._makeHash();
+      }
+    connectedCallback(){
+      super.connectedCallback();
+        // this.encrypt('some text to enc', 'mypassword').then(function(response) {
+        //   console.log("============ YES !")
+        //   console.log(response)
+        // }).catch(function(error) {
+        //   console.log("============ NOO !")
+        //   console.log(error)
+        // })
+        // this.decrypt('9b1188713a374a332d50fe9ffb0a5e175b1419781001003350c9dc4a076be37d', '04340ac605cec140c6c4afdcc5f2a9e2', 'mypassword').then(function(response) {
+        //   console.log("============ YES !")
+        //   console.log(response)
+        // }).catch(function(error) {
+        //   console.log("============ NOO !")
+        //   console.log(error)
+        // })
+    }
+      /**
+      * Decrypt
+      */
+      decrypt(hash, iv, password) {
+        return new Promise(function(resolve, reject) {
+          this.hash = this.initializationVector = this.password = this.direction = this.mnemonic = null
+          this.hash = hash
+          this.initializationVector = iv
+          this.password = password
+          this.direction = 'decrypt'
+          this._makeHash().then(function(response) {
+            resolve(response);
+          }).catch(function(error) {
+            reject(error);
+          })
+        }.bind(this))
+      }
+      /**
+      * Encrypt
+      */
+      encrypt(mnemonic, password) {
+    	  console.log("into encrypt");
+        return new Promise(function(resolve, reject) {
+          this.hash = this.initializationVector = this.password = this.direction = this.mnemonic = null
+          this.password = password
+          this.mnemonic = mnemonic
+          this.direction = 'encrypt'
+          this._makeHash().then(function(response) {
+            resolve(response);
+          }).catch(function(error) {
+            reject(error);
+          })
+        }.bind(this))
+      }
+      /**
+      * Make Hash
+      */
+      _makeHash() {
+    	  console.log("into make hash "+this.direction+" "+this.password);
+        return new Promise(function(resolve, reject) {
+          if(this.debug){console.debug('Working, please wait...');}
+          var keySizeInBits = slowAES.aes.keySize.SIZE_256;
+          var keySizeInBytes = keySizeInBits/8;
+          var mode = slowAES.modeOfOperation.CBC;
+          
+          if(this.initializationVector){
+            var iv = this.initializationVector
+          } else {
+            var array = window.crypto.getRandomValues(new Uint8Array(16));
+        	  console.log("into elsee-----"+array.length);
+            var iv = this._toHexString(array)
+            this.initializationVector = iv;
+            console.log("array length-----"+array.length+" --- "+iv);
+          }
+
+          if(this.debug){console.debug('Initialization Vector:' + iv);}
+          var rounds = this.rounds;
+          var derivedKey = null;
+          var mypbkdf2 = new PBKDF2(this.password, iv, rounds, keySizeInBytes);
+          console.log("----- keySizeInBytes "+keySizeInBytes);
+          var result_callback = function(key) {
+            derivedKey = key;
+            if(this.direction && this.password){
+              if(this.debug){console.debug('We have a direction and a password');}
+              
+              console.log("---- derivedKey "+derivedKey);
+              if(this.direction == 'encrypt' && this.mnemonic){
+                if(this.debug){console.debug('Encryption request processing');}
+                var bytes = this._encryptString(this.mnemonic, derivedKey, iv);
+                this.hash = (this._toHexString(bytes))
+                console.log("***********************encrypt "+ this.hash+" iv - "+this.initializationVector);
+                localStorage.setItem("encKey", JSON.stringify({hash: this.hash, iv: this.initializationVector}));
+                if(this.debug){console.debug('Mnemonic: '+this.mnemonic);}
+                if(this.debug){console.debug('Hash: '+this.hash);}
+                resolve({hash: this.hash, iv: this.initializationVector})
+                if(this.debug){console.debug('Done');}
+              }
+              if(this.direction == 'decrypt' && this.hash){
+                if(this.debug){console.debug('Decryption request processing');}
+                var bytes = this._toByteArray(this.hash);
+                this.mnemonic = this._decryptString(bytes, derivedKey, iv);
+                console.log("--- decrypted string "+this.mnemonic);
+                if(this.debug){console.debug('Hash: '+this.hash);}
+                if(this.debug){console.debug('Mnemonic: '+this.mnemonic);}
+                resolve({mnemonic: this.mnemonic})
+                if(this.debug){console.debug('Done!');}
+              }
+            }
+          }.bind(this);
+          mypbkdf2.deriveKey(function(){}, result_callback);
+        }.bind(this))
+      }
+      _toHexString(byteArray) {
+        return Array.prototype.map.call(byteArray, function(byte) {
+        return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        }).join('');
+      }
+      _toByteArray(hexString) {
+        var result = [];
+        while (hexString.length >= 2) {
+          result.push(parseInt(hexString.substring(0, 2), 16));
+          hexString = hexString.substring(2, hexString.length);
+        }
+        return result;
+      }
+      _encryptString(plainText, key, iv){
+        var bytesToEncrypt = cryptoHelpers.convertStringToByteArray(plainText);
+        return this._encryptBytes(bytesToEncrypt, key, iv);
+      }
+      _decryptString(encryptedByteArray, key, iv){
+        var bytes = this._decryptBytes(encryptedByteArray, key, iv);
+        var decryptedString = cryptoHelpers.convertByteArrayToString(bytes);
+        return decryptedString;
+      }
+      _encryptBytes(plainText, key, iv){
+    	  console.log("Into encrypt");
+        var t = typeof plainText;
+        if (t == "string") {
+          plainText = hexStringToByteArray(plainText);
+        }
+        var result = slowAES.encrypt(plainText, slowAES.modeOfOperation.CBC, key, iv);
+        return result;
+      }
+      _decryptBytes(encryptedByteArray, key, iv){
+    	  console.log("Into decrypt");
+        var result = slowAES.decrypt(encryptedByteArray, slowAES.modeOfOperation.CBC, key, iv);
+        return result;
+      }
+    }
+    
+    window.customElements.define(aes256cbc.is, aes256cbc);
+  </script>
+</dom-module>
